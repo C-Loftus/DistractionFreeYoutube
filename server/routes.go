@@ -23,7 +23,7 @@ type Data struct {
 func (r Routes) apiDataRoute(resp http.ResponseWriter, req *http.Request) {
 	var data Data
 
-	resp.Header().Set("Access-Control-Allow-Origin", "http://localhost:8080")
+	resp.Header().Set("Access-Control-Allow-Origin", "*")
 
 	data.Query = "Dummy data"
 	datetime := time.Now().Format("Mon Aug 5 10:17:08 EST 2019")
