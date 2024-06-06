@@ -12,3 +12,9 @@ type Playlist struct {
 	Videos []Video `json:"videos"`
 	ThumbnailLink string `json:"thumbnailLink"`
 }
+
+type Subscription struct {
+	Title string `json:"title"`
+	ThumbnailLink string `json:"thumbnailLink"`
+	
+}

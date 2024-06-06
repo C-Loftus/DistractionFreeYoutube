@@ -100,12 +100,26 @@ func main() {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		call := service.Subscriptions.List([]string{"id", "snippet", "contentDetails"}).Mine(true)
+		call := service.Subscriptions.List([]string{"id", "snippet", "contentDetails"}).Mine(true).MaxResults(50)
 		response, err := call.Do()
 		if err != nil {
 		  slog.Error("Error calling Subscriptions API: %v", err)
 		}
-		json.NewEncoder(w).Encode(response)
+
+		var subscriptions []Subscription
+		for _, item := range response.Items {
+			if item == nil || item.Snippet == nil || item.Snippet.Thumbnails.Default == nil {
+				slog.Error("item or item.SubscriberSnippet or item.SubscriberSnippet.Thumbnails.Default is nil")
+				continue
+			}
+
+			subscriptions = append(subscriptions, Subscription{
+				Title: item.Snippet.Title,
+				ThumbnailLink: item.Snippet.Thumbnails.Default.Url,
+			})
+		}
+
+		json.NewEncoder(w).Encode(subscriptions)
 	}))
 
 	router.Post("/api/subscriptions/{id}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
