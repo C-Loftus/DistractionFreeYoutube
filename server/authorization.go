@@ -31,6 +31,16 @@ func getCachedClient(ctx context.Context, config *oauth2.Config) *http.Client {
   return config.Client(ctx, tok)
 }
 
+
+func getCachedToken(ctx context.Context, config *oauth2.Config) *oauth2.Token {
+  cacheFile, err := tokenCacheFile()
+  if err != nil {
+    log.Fatalf("Unable to get path to cached credential file. %v", err)
+  }
+  tok, _ := tokenFromFile(cacheFile)
+  return tok
+}
+
 // getTokenFromWeb uses Config to request a Token.
 // It returns the retrieved Token.
 func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
