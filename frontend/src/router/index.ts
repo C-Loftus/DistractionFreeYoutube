@@ -4,6 +4,7 @@ import NotFound from '@/views/NotFound.vue'
 import App from '@/App.vue'
 import LoginHome from '@/views/LoginHome.vue'
 import PlaylistsTable from '@/views/PlaylistsTable.vue'
+import SearchResults from '@/views/SearchResults.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -24,6 +25,15 @@ const router = createRouter({
     {
       path: '/',
       component: LoginHome
+    },
+    {
+      path: '/search',
+      component: SearchResults
+    },
+    {
+      path: '/search?=query=:query',
+      component: SearchResults,
+      props: (route) => ({ query: route.query.query })
     }
   ]
 })

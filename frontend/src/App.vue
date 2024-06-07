@@ -7,7 +7,7 @@
         <router-link to="/subscriptions">Subscriptions</router-link>
         <router-link to="/playlists">Playlists</router-link>
       </div>
-      <form>
+      <form @submit.stop.prevent="submit">
         <input type="text" placeholder="Search" v-model="searchData" />
       </form>
       <div class="right">
@@ -36,6 +36,13 @@ export default {
       this.isDark = !this.isDark
       localStorage.setItem('isDark', this.isDark)
       document.documentElement.classList.toggle('dark')
+    },
+    submit() {
+      console.log(this.searchData)
+      if (this.searchData) {
+        this.searchData = this.searchData.trim()
+        this.$router.push({ path: '/search', query: { query: this.searchData } })
+      }
     }
   }
 }

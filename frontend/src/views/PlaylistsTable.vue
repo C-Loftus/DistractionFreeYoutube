@@ -4,8 +4,9 @@
     <div v-else class="playlist-container">
       <div v-for="(playlist, index) in playlists" :key="index" class="playlist">
         <h2>{{ playlist.title }}</h2>
+        <img :src="playlist.thumbnailLink" :alt="playlist.title" />
         <div class="videos">
-          <div v-for="(video, vIndex) in playlist.videos" :key="vIndex" class="video">
+          <!-- <div v-for="(video, vIndex) in playlist.videos" :key="vIndex" class="video">
             <iframe
               width="560"
               height="315"
@@ -15,7 +16,7 @@
               allowfullscreen
             ></iframe>
             <p>{{ video.title }}</p>
-          </div>
+          </div> -->
         </div>
       </div>
     </div>
@@ -65,6 +66,7 @@ export default {
 .playlist-container {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .playlist {
