@@ -12,10 +12,8 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
 
@@ -34,11 +32,10 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-
 func main() {
 
 	staticDir := "web/dist"
-	
+
 	router := chi.NewRouter()
 	// routes := Routes{
 	// 	staticDir: staticDir,
@@ -46,20 +43,20 @@ func main() {
 	// 	apiSecret: "secret",
 	// }
 
-	router.Use(middleware.Logger)    
+	router.Use(middleware.Logger)
 
 	b, err := os.ReadFile("client_secret.json")
 	if err != nil {
-	  log.Fatalf("Unable to read client secret file: %v", err)
+		log.Fatalf("Unable to read client secret file: %v", err)
 	}
-  
+
 	config, err := google.ConfigFromJSON(b, youtube.YoutubeReadonlyScope)
 	if err != nil {
-	  log.Fatalf("Unable to parse client secret file to config: %v", err)
+		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
 
 	router.Get("/", func(resp http.ResponseWriter, req *http.Request) {
-		http.ServeFile(resp, req, staticDir + "/index.html")
+		http.ServeFile(resp, req, staticDir+"/index.html")
 	})
 
 	router.Get("/api/auth", http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
@@ -74,11 +71,11 @@ func main() {
 	}))
 
 	router.Get("/", http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
-		
+
 		queryParams := req.URL.Query()
-	
+
 		code := queryParams.Get("code")
-	
+
 		if code == "" {
 			http.Error(resp, "Missing 'code' query parameter", http.StatusBadRequest)
 			return
@@ -103,7 +100,9 @@ func main() {
 		call := service.Subscriptions.List([]string{"id", "snippet", "contentDetails"}).Mine(true).MaxResults(50)
 		response, err := call.Do()
 		if err != nil {
-		  slog.Error("Error calling Subscriptions API: %v", err)
+			slog.Error("Error calling Subscriptions API: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		var subscriptions []Subscription
@@ -114,7 +113,7 @@ func main() {
 			}
 
 			subscriptions = append(subscriptions, Subscription{
-				Title: item.Snippet.Title,
+				Title:         item.Snippet.Title,
 				ThumbnailLink: item.Snippet.Thumbnails.Default.Url,
 			})
 		}
@@ -135,61 +134,56 @@ func main() {
 		call := service.Subscriptions.Insert([]string{"id", "snippet", "contentDetails"}, &subscription)
 		response, err := call.Do()
 		if err != nil {
-		  slog.Error("Error calling Subscription Insertion API: %v", err)
+			slog.Error("Error calling Subscription Insertion API: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 		json.NewEncoder(w).Encode(response)
 	}))
 
-
 	router.Get("/api/playlists", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.Background()
-		token := getCachedToken(ctx, config)
-		if token == nil {
-			http.Error(w, "Error getting cached token", http.StatusInternalServerError)
-			return
-		}
-	
-		youtubeService, err := youtube.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
+
+		youtubeService, err := generateService(config, w)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-	
+
 		call := youtubeService.Playlists.List([]string{"id", "snippet", "contentDetails"}).Mine(true).MaxResults(50)
 		raw_playlists, err := call.Do()
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Error calling API: %v", err), http.StatusInternalServerError)
 			return
 		}
-	
+
 		if raw_playlists == nil || raw_playlists.Items == nil {
 			http.Error(w, "No playlists found", http.StatusNotFound)
 			return
 		}
-	
+
 		var allPlaylists []Playlist
 		// length of raw_playlists.Items is 50
 		fmt.Println("length of raw_playlists.Items is ", len(raw_playlists.Items))
-	
+
 		for _, item := range raw_playlists.Items {
 			if item == nil || item.Snippet == nil || item.Snippet.Thumbnails == nil || item.Snippet.Thumbnails.Default == nil {
 				continue
 			}
-	
+
 			raw_videos := youtubeService.PlaylistItems.List([]string{"id", "snippet"}).PlaylistId(item.Id).MaxResults(50)
 			videosResponse, err := raw_videos.Do()
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Error calling API: %v", err), http.StatusInternalServerError)
 				return
 			}
-	
+
 			if videosResponse == nil || videosResponse.Items == nil {
-				
+
 				continue
 			}
-	
+
 			var allVideos []Video
-	
+
 			fmt.Println("length of videosResponse.Items is ", len(videosResponse.Items))
 			for _, videoItem := range videosResponse.Items {
 				if videoItem == nil || videoItem.Snippet == nil || videoItem.Snippet.ResourceId == nil || videoItem.Snippet.Thumbnails == nil {
@@ -198,7 +192,7 @@ func main() {
 
 					continue
 				}
-	
+
 				var link string
 				if videoItem.Snippet.Thumbnails.High != nil {
 					link = videoItem.Snippet.Thumbnails.High.Url
@@ -206,25 +200,25 @@ func main() {
 				if link == "" && videoItem.Snippet.Thumbnails.Default != nil {
 					link = videoItem.Snippet.Thumbnails.Default.Url
 				}
-	
+
 				video := Video{
-					ID:           videoItem.Snippet.ResourceId.VideoId,
-					Title:        videoItem.Snippet.Title,
-					Link:         "https://www.youtube.com/watch?v=" + videoItem.Snippet.ResourceId.VideoId,
+					ID:            videoItem.Snippet.ResourceId.VideoId,
+					Title:         videoItem.Snippet.Title,
+					Link:          "https://www.youtube.com/watch?v=" + videoItem.Snippet.ResourceId.VideoId,
 					ThumbnailLink: link,
 				}
 				allVideos = append(allVideos, video)
 			}
-	
+
 			playlist := Playlist{
 				Videos:        allVideos,
 				ThumbnailLink: item.Snippet.Thumbnails.High.Url,
 				Title:         item.Snippet.Title,
 			}
-	
+
 			allPlaylists = append(allPlaylists, playlist)
 		}
-	
+
 		encoder := json.NewEncoder(w)
 		encoder.SetIndent("", "\t")
 		if err := encoder.Encode(allPlaylists); err != nil {
@@ -232,7 +226,40 @@ func main() {
 			return
 		}
 	}))
-	
+
+	router.Get("/api/playlists/{id}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Not implemented", http.StatusNotImplemented)
+	}))
+
+	router.Get("/api/search", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query().Get("query")
+
+		youtubeService, err := generateService(nil, w) // Pass appropriate config instead of nil
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		call := youtubeService.Search.List([]string{"id", "snippet"}).Q(query).MaxResults(50)
+		response, err := call.Do()
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error calling API: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		if response == nil || response.Items == nil {
+			http.Error(w, "No results found", http.StatusNotFound)
+			return
+		}
+
+		encoder := json.NewEncoder(w)
+		encoder.SetIndent("", "\t")
+		if err := encoder.Encode(response.Items); err != nil {
+			http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
+			return
+		}
+	}))
+
 	// Serve static files
 	FileServer(router, "/", http.Dir(staticDir))
 

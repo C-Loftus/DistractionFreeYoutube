@@ -8,7 +8,7 @@ RUN apk add --no-cache git
 # Set the current working directory inside the container.
 WORKDIR /app
 
-COPY go.mod go.sum client_secret.json ./
+COPY go.mod go.sum client_secret.json youtube-credentials.json ./
 
 # Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed.
 RUN go mod download
