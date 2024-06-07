@@ -16,7 +16,9 @@ RUN npm install -g serve
 # Bundle app source
 COPY . ./
 
-RUN chown -R node:node /app/node_modules
+# RUN chown -R node:node /app/node_modules
+
+EXPOSE 5173
 
 # start app
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "dev", "--", "--host"]
