@@ -70,6 +70,12 @@ func main() {
 		http.Redirect(resp, req, parsed_url.String(), http.StatusFound)
 	}))
 
+	router.Get("/api/auth/profile", http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+
+		resp.WriteHeader(http.StatusNotImplemented)
+
+	}))
+
 	router.Get("/", http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 
 		queryParams := req.URL.Query()
