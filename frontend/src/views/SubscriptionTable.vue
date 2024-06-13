@@ -1,6 +1,6 @@
 <template>
   <div class="subscriptions-container">
-    <spinner v-if="!items"></spinner>
+    <Spinner v-if="!items" :errorMessage="errorMessage"></Spinner>
     <div v-else class="subscriptions-table">
       <div class="table-header">
         <div class="header-item">Title</div>
@@ -25,7 +25,8 @@ export default {
   data() {
     return {
       items: null,
-      intervalId: null
+      intervalId: null,
+      errorMessage: null
     }
   },
 
@@ -46,6 +47,7 @@ export default {
         })
         .catch((err) => {
           console.error(err)
+          this.errorMessage = err
         })
     }
   }
@@ -81,20 +83,20 @@ export default {
 }
 
 .table-header {
-  background-color: #f0f0f0;
+  background-color: #a6adc8;
   font-weight: bold;
 }
 
 .table-row:nth-child(even) {
-  background-color: #fafafa;
+  background-color: #cdd6f4;
 }
 
 /* dark mode child even */
 .dark .table-row:nth-child(even) {
-  background-color: #333;
+  background-color: #45475a;
 }
 
 .dark .table-header {
-  background-color: #333;
+  background-color: #45475a;
 }
 </style>

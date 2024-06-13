@@ -72,7 +72,19 @@ func main() {
 
 	router.Get("/api/auth/profile", http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 
-		resp.WriteHeader(http.StatusNotImplemented)
+		youtubeService, err := generateService(config, resp)
+		if err != nil {
+			http.Error(resp, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		call := youtubeService.Channels.List([]string{"id", "snippet"}).Mine(true)
+		response, err := call.Do()
+		if err != nil {
+			http.Error(resp, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(resp).Encode(response)
 
 	}))
 
@@ -127,25 +139,25 @@ func main() {
 		json.NewEncoder(w).Encode(subscriptions)
 	}))
 
-	router.Post("/api/subscriptions/{id}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		client := getCachedClient(r.Context(), config)
-		service, err := youtube.New(client)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		id := chi.URLParam(r, "id")
-		subscription := youtube.Subscription{
-			Id: id,
-		}
-		call := service.Subscriptions.Insert([]string{"id", "snippet", "contentDetails"}, &subscription)
-		response, err := call.Do()
-		if err != nil {
-			slog.Error("Error calling Subscription Insertion API: %v", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		json.NewEncoder(w).Encode(response)
-	}))
+	// router.Post("/api/subscriptions/{id}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// 	client := getCachedClient(r.Context(), config)
+	// 	service, err := youtube.New(client)
+	// 	if err != nil {
+	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	}
+	// 	id := chi.URLParam(r, "id")
+	// 	subscription := youtube.Subscription{
+	// 		Id: id,
+	// 	}
+	// 	call := service.Subscriptions.Insert([]string{"id", "snippet", "contentDetails"}, &subscription)
+	// 	response, err := call.Do()
+	// 	if err != nil {
+	// 		slog.Error("Error calling Subscription Insertion API: %v", err)
+	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 		return
+	// 	}
+	// 	json.NewEncoder(w).Encode(response)
+	// }))
 
 	router.Get("/api/playlists", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -168,8 +180,6 @@ func main() {
 		}
 
 		var allPlaylists []Playlist
-		// length of raw_playlists.Items is 50
-		fmt.Println("length of raw_playlists.Items is ", len(raw_playlists.Items))
 
 		for _, item := range raw_playlists.Items {
 			if item == nil || item.Snippet == nil || item.Snippet.Thumbnails == nil || item.Snippet.Thumbnails.Default == nil {
@@ -239,21 +249,41 @@ func main() {
 
 	router.Get("/api/search", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query().Get("query")
-
-		youtubeService, err := generateService(nil, w) // Pass appropriate config instead of nil
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if query == "" {
+			http.Error(w, "Query parameter is required", http.StatusBadRequest)
 			return
 		}
 
-		call := youtubeService.Search.List([]string{"id", "snippet"}).Q(query).MaxResults(50)
+		youtubeService, err := generateService(nil, w) // Pass appropriate config instead of nil
+		if err != nil {
+			slog.Error("Error generating YouTube service: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		call := youtubeService.Search.List([]string{"id", "snippet"})
+		if call == nil {
+			slog.Error("Error creating API call: call is nil")
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		call = call.Q(query).MaxResults(50)
+		if call == nil {
+			slog.Error("Error setting query or max results: call is nil")
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
 		response, err := call.Do()
 		if err != nil {
+			slog.Error("Error calling YouTube API: %v", err)
 			http.Error(w, fmt.Sprintf("Error calling API: %v", err), http.StatusInternalServerError)
 			return
 		}
 
 		if response == nil || response.Items == nil {
+			slog.Error("No results found")
 			http.Error(w, "No results found", http.StatusNotFound)
 			return
 		}
@@ -261,6 +291,7 @@ func main() {
 		encoder := json.NewEncoder(w)
 		encoder.SetIndent("", "\t")
 		if err := encoder.Encode(response.Items); err != nil {
+			log.Printf("Error encoding response: %v", err)
 			http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
 			return
 		}

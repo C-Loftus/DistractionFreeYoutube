@@ -1,11 +1,15 @@
 # DistractionFreeYoutube
 
-Browse YouTube with your YouTube account without having the extra distractions of shorts or recommendations.
+Browse YouTube with your YouTube account and all your playlists in a custom UI without having the extra distractions of shorts or recommendations.
 
-Similar to the Invidious project, but focused on productivity instead of user privacy.
+_This is a WIP. I wanted a program similar to the Invidious project, but focused on productivity and integrated with my YouTube account instead of a focus on user privacy._
 
-To run
+## Setup
 
 ```
 sudo docker-compose up
 ```
+
+## Example UI
+
+![An image of search results](docs/image.png)

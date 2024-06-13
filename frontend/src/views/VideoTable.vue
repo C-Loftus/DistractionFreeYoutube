@@ -1,39 +1,34 @@
 <template>
-  <div :key="forceUpdateKey">
+  <div>
     <Spinner v-if="results.length === 0" :errorMessage="error"></Spinner>
     <div v-else class="videos">
       <table>
         <thead>
           <tr>
-            <th class="video-column">Video</th>
             <th>Title</th>
-            <th>Description</th>
+            <th>Video</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="(item, index) in results" :key="index">
-            <td class="video-column">
+            <td>{{ item.title }}</td>
+            <td>
               <iframe
-                ref="iframe"
                 width="640"
                 height="360"
-                :src="getEmbedUrl(item.id.videoId)"
+                :src="getEmbedUrl(item.id)"
                 frameborder="0"
                 allowfullscreen
                 loading="lazy"
                 v-if="loadPlayer[index]"
-                @click="toggleFullScreen($event)"
               ></iframe>
-              <!-- get image -->
               <img
                 v-else
-                :src="item.snippet.thumbnails.high.url"
-                :alt="item.snippet.title"
+                :src="item.thumbnailLink"
+                :alt="item.title"
                 @click="togglePlayer(index)"
               />
             </td>
-            <td>{{ item.snippet.title }}</td>
-            <td>{{ item.snippet.description }}</td>
           </tr>
         </tbody>
       </table>
@@ -59,11 +54,17 @@ export default {
   mounted() {
     this.getData()
   },
+
+  // computed: {
+  //   filteredVideos() {
+  //     return this.results.filter((item) => item.title.includes(this.$route.query.query))
+  //   }
+  // },
+
   methods: {
     getData() {
-      this.forceUpdateKey += 1
       try {
-        fetch(`${this.$apiEndpoint}/search?query=${this.$route.query.query}`)
+        fetch(`${this.$apiEndpoint}/playlists`)
           .then((resp) => {
             if (!resp.ok) {
               throw new Error('Network response was not ok')
@@ -71,7 +72,11 @@ export default {
             return resp.json()
           })
           .then((json) => {
-            this.results = json // Assuming 'items' is the key containing the array of videos
+            console.log(json)
+            this.results = json.filter(
+              (playlist) => playlist.title === this.$route.params.name
+            )[0].videos
+            console.log(JSON.stringify(this.results))
           })
           .catch((err) => {
             this.error = 'Error fetching playlists: ' + err.message
@@ -84,23 +89,9 @@ export default {
     getEmbedUrl(videoId) {
       return `https://www.youtube.com/embed/${videoId}`
     },
+
     togglePlayer(itemId) {
-      this.$set(this.loadPlayer, itemId, true)
-    },
-    toggleFullScreen(event) {
-      const iframe = event.target
-      if (iframe.requestFullscreen) {
-        iframe.requestFullscreen()
-      } else if (iframe.mozRequestFullScreen) {
-        // Firefox
-        iframe.mozRequestFullScreen()
-      } else if (iframe.webkitRequestFullscreen) {
-        // Chrome, Safari and Opera
-        iframe.webkitRequestFullscreen()
-      } else if (iframe.msRequestFullscreen) {
-        // IE/Edge
-        iframe.msRequestFullscreen()
-      }
+      this.loadPlayer[itemId] = true
     }
   }
 }
@@ -112,22 +103,31 @@ export default {
 }
 
 table {
-  width: 60%;
-  border-collapse: collapse;
+  width: 80%;
   margin: 0 auto;
+  border-collapse: collapse;
 }
 
 th,
 td {
-  padding: 10px;
+  padding: 8px;
   text-align: left;
 }
 
-th.video-column,
-td.video-column {
-  width: 60%;
-}
 th {
+  background-color: #9399b2;
   text-align: center;
+}
+
+.dark tbody tr:nth-child(even) {
+  background-color: #313244;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #a6adc8;
+}
+
+.dark th {
+  background-color: #313244;
 }
 </style>

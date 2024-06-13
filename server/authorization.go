@@ -19,13 +19,9 @@ import (
 	"google.golang.org/api/youtube/v3"
 )
 
-const missingClientSecretsMessage = `
-Please configure OAuth 2.0
-`
-
 func generateService(config *oauth2.Config, w http.ResponseWriter) (*youtube.Service, error) {
 	ctx := context.Background()
-	token := getCachedToken(ctx, config)
+	token := getCachedToken()
 	if token == nil {
 		http.Error(w, "Error getting cached token", http.StatusInternalServerError)
 		err := fmt.Errorf("error getting cached token")
@@ -33,7 +29,7 @@ func generateService(config *oauth2.Config, w http.ResponseWriter) (*youtube.Ser
 	}
 
 	youtubeService, err := youtube.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
-	if err != nil {
+	if err != nil || youtubeService == nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		err := fmt.Errorf("error creating YouTube client: %v", err)
 		return nil, err
@@ -52,7 +48,7 @@ func getCachedClient(ctx context.Context, config *oauth2.Config) *http.Client {
 	return config.Client(ctx, tok)
 }
 
-func getCachedToken(ctx context.Context, config *oauth2.Config) *oauth2.Token {
+func getCachedToken() *oauth2.Token {
 	cacheFile, err := tokenCacheFile()
 	if err != nil {
 		log.Fatalf("Unable to get path to cached credential file. %v", err)

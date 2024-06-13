@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import SubscriptionTable from '../views/SubscriptionTable.vue'
 import NotFound from '@/views/NotFound.vue'
-import App from '@/App.vue'
 import LoginHome from '@/views/LoginHome.vue'
 import PlaylistsTable from '@/views/PlaylistsTable.vue'
 import SearchResults from '@/views/SearchResults.vue'
+import VideoTable from '@/views/VideoTable.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,6 +17,10 @@ const router = createRouter({
     {
       path: '/playlists',
       component: PlaylistsTable
+    },
+    {
+      path: '/playlists/:name',
+      component: VideoTable
     },
     {
       path: '/:catchAll(.*)',

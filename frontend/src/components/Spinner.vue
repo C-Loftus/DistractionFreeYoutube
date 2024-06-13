@@ -1,15 +1,20 @@
 <template>
-  <div class="spinner">
+  <div class="spinner" v-if="!errorMessage">
     <div class="bounce1"></div>
     <div class="bounce2"></div>
     <div class="bounce3"></div>
   </div>
+  <p v-else>{{ errorMessage }}</p>
 </template>
 
 <script>
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
-  name: 'spinner'
+  name: 'spinner',
+
+  props: {
+    errorMessage: String
+  }
 }
 </script>
 
@@ -19,11 +24,14 @@ export default {
   width: 90px;
   text-align: center;
 }
+p {
+  text-align: center;
+}
 
 .spinner > div {
   width: 28px;
   height: 28px;
-  background-color: rgb(80, 80, 193);
+  background-color: #313244;
 
   border-radius: 100%;
   display: inline-block;
@@ -63,5 +71,9 @@ export default {
     -webkit-transform: scale(1);
     transform: scale(1);
   }
+}
+
+.dark .spinner > div {
+  background-color: #cdd6f4;
 }
 </style>

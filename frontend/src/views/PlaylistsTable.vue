@@ -1,23 +1,14 @@
 <template>
   <div>
-    <spinner v-if="playlists.length === 0"></spinner>
+    <spinner v-if="playlists.length === 0" :errorMessage="error"></spinner>
     <div v-else class="playlist-container">
       <div v-for="(playlist, index) in playlists" :key="index" class="playlist">
-        <h2>{{ playlist.title }}</h2>
-        <img :src="playlist.thumbnailLink" :alt="playlist.title" />
-        <div class="videos">
-          <!-- <div v-for="(video, vIndex) in playlist.videos" :key="vIndex" class="video">
-            <iframe
-              width="560"
-              height="315"
-              :src="getEmbedUrl(video.id)"
-              frameborder="0"
-              loading="lazy"
-              allowfullscreen
-            ></iframe>
-            <p>{{ video.title }}</p>
-          </div> -->
-        </div>
+        <router-link :to="`/playlists/${playlist.title}`">
+          <h2>{{ playlist.title }}</h2>
+          <img :src="playlist.thumbnailLink" :alt="playlist.title" />
+        </router-link>
+
+        <div class="videos"></div>
       </div>
     </div>
   </div>
@@ -87,7 +78,6 @@ export default {
 .video p {
   margin-top: 5px;
 }
-
 h2 {
   text-align: center;
 }
