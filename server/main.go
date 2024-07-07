@@ -47,7 +47,7 @@ func main() {
 
 	b, err := os.ReadFile("client_secret.json")
 	if err != nil {
-		slog.Warn("Unable to read client secret file: %v", err)
+		log.Fatalf("Unable to read client secret file: %v", err)
 	}
 
 	config, err := google.ConfigFromJSON(b, youtube.YoutubeReadonlyScope)
