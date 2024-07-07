@@ -6,9 +6,13 @@ _This is a WIP. I wanted a program similar to the Invidious project, but focused
 
 ## Setup
 
-```
-sudo docker-compose up
-```
+1. Create an API key in the Google Cloud console that permits YouTube API queries
+2. Download the credentials, name the file `client_secret.json` and put it in the root directory of this application
+3. Run `sudo docker-compose up`
+
+
+> [!NOTE]  
+Once you obtain your API key and are up and running, the application will work for many users. Each user does not need individual API keys.
 
 ## Example UI
 
